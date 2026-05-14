@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 
 public interface BekbolatovZholamanBookingRepository extends JpaRepository<BekbolatovZholamanBooking, Long> {
 
@@ -32,5 +33,18 @@ public interface BekbolatovZholamanBookingRepository extends JpaRepository<Bekbo
             @Param("q") String q,
             Pageable pageable
     );
-}
 
+    @Query("""
+            select (count(b) > 0) from BekbolatovZholamanBooking b
+            where b.room.id = :roomId
+              and b.status in :statuses
+              and b.startDate <= :endDate
+              and b.endDate >= :startDate
+            """)
+    boolean existsOverlapping(
+            @Param("roomId") Long roomId,
+            @Param("statuses") Collection<BekbolatovZholamanBookingStatus> statuses,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+}
