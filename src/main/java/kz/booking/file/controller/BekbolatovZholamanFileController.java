@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -26,8 +27,8 @@ public class BekbolatovZholamanFileController {
         this.fileStorageService = fileStorageService;
     }
 
-    @PostMapping("/bookings/{bookingId}/files")
-    public BekbolatovZholamanStoredFileResponse upload(@PathVariable Long bookingId, @RequestParam("file") MultipartFile file) {
+    @PostMapping(value = "/bookings/{bookingId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BekbolatovZholamanStoredFileResponse upload(@PathVariable Long bookingId, @RequestPart("file") MultipartFile file) {
         return BekbolatovZholamanStoredFileMapper.toResponse(fileStorageService.uploadToBooking(bookingId, file));
     }
 
@@ -45,4 +46,3 @@ public class BekbolatovZholamanFileController {
                 .body(d.resource());
     }
 }
-
