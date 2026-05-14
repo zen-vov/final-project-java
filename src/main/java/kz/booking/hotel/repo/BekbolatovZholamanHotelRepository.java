@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BekbolatovZholamanHotelRepository extends JpaRepository<BekbolatovZholamanHotel, Long> {
     Page<BekbolatovZholamanHotel> findByCityContainingIgnoreCase(String city, Pageable pageable);
+    Page<BekbolatovZholamanHotel> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }
-
