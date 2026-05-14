@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BekbolatovZholamanUserDetailsService implements UserDetailsService {
@@ -26,8 +27,8 @@ public class BekbolatovZholamanUserDetailsService implements UserDetailsService 
 
         List<GrantedAuthority> auth = user.getRoles()
                 .stream()
-                .map(r -> new SimpleGrantedAuthority(r.getName().name()))
-                .toList();
+                .map(r -> (GrantedAuthority) new SimpleGrantedAuthority(r.getName().name()))
+                .collect(Collectors.toList());
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
@@ -37,4 +38,3 @@ public class BekbolatovZholamanUserDetailsService implements UserDetailsService 
                 .build();
     }
 }
-
