@@ -57,6 +57,7 @@ Bootstrap admin:
 - если нет админа, создается admin по настройкам:
   - `app.bootstrap.admin.email` (default `admin@local`)
   - `app.bootstrap.admin.password` (default `admin12345`)
+  - `app.files.storage-dir` (можно задавать через env `APP_FILES_STORAGE_DIR`)
 
 ## 4) REST эндпоинты (GET/POST/PUT/DELETE)
 
@@ -203,4 +204,3 @@ mvn -Dmaven.repo.local=/private/tmp/m2 spring-boot:run
   - password: `admin12345`
 - Для запросов с protected эндпоинтами используйте заголовок:
   - `Authorization: Bearer <token>`
-
