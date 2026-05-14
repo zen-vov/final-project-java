@@ -6,19 +6,23 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import kz.booking.common.entity.BekbolatovZholamanBaseEntity;
 import kz.booking.hotel.entity.BekbolatovZholamanHotel;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "rooms")
+@Table(
+        name = "rooms",
+        uniqueConstraints = @UniqueConstraint(name = "uk_rooms_hotel_room_number", columnNames = {"hotel_id", "room_number"})
+)
 public class BekbolatovZholamanRoom extends BekbolatovZholamanBaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "hotel_id", nullable = false)
     private BekbolatovZholamanHotel hotel;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "room_number", nullable = false, length = 20)
     private String roomNumber;
 
     @Column(nullable = false)
@@ -76,4 +80,3 @@ public class BekbolatovZholamanRoom extends BekbolatovZholamanBaseEntity {
         this.active = active;
     }
 }
-

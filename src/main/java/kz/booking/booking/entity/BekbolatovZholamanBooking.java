@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import kz.booking.common.entity.BekbolatovZholamanBaseEntity;
 import kz.booking.room.entity.BekbolatovZholamanRoom;
 import kz.booking.user.entity.BekbolatovZholamanUser;
@@ -15,7 +16,13 @@ import kz.booking.user.entity.BekbolatovZholamanUser;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "bookings")
+@Table(
+        name = "bookings",
+        indexes = {
+                @Index(name = "idx_bookings_room_dates", columnList = "room_id,start_date,end_date"),
+                @Index(name = "idx_bookings_user", columnList = "user_id")
+        }
+)
 public class BekbolatovZholamanBooking extends BekbolatovZholamanBaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -25,10 +32,10 @@ public class BekbolatovZholamanBooking extends BekbolatovZholamanBaseEntity {
     @JoinColumn(name = "room_id", nullable = false)
     private BekbolatovZholamanRoom room;
 
-    @Column(nullable = false)
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(nullable = false)
+    @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
     @Enumerated(EnumType.STRING)
@@ -89,4 +96,3 @@ public class BekbolatovZholamanBooking extends BekbolatovZholamanBaseEntity {
         this.notes = notes;
     }
 }
-
