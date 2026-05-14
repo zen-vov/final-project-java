@@ -32,7 +32,7 @@ app:
     secret: "CHANGE_ME_IN_PROD_CHANGE_ME_IN_PROD_CHANGE_ME_IN_PROD_123456"
     expirationMinutes: 120
   files:
-    storageDir: ./storage
+    storage-dir: ./storage
 
 management:
   endpoints:

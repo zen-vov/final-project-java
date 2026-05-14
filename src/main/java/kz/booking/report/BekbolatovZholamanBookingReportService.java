@@ -27,7 +27,7 @@ public class BekbolatovZholamanBookingReportService {
 
     public BekbolatovZholamanBookingReportService(
             BekbolatovZholamanBookingRepository bookingRepository,
-            @Value("${app.files.storageDir}") String storageDir
+            @Value("${app.files.storage-dir}") String storageDir
     ) {
         this.bookingRepository = bookingRepository;
         this.reportsDir = Path.of(storageDir).resolve("reports");
@@ -83,4 +83,3 @@ public class BekbolatovZholamanBookingReportService {
     public record ReportResult(String key, Path path) {
     }
 }
-

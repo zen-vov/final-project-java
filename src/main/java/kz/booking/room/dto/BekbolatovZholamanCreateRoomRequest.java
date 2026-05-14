@@ -3,6 +3,7 @@ package kz.booking.room.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
 
 import java.math.BigDecimal;
 
@@ -17,7 +18,7 @@ public class BekbolatovZholamanCreateRoomRequest {
     private int capacity;
 
     @NotNull
-    @Min(0)
+    @DecimalMin("0.0")
     private BigDecimal pricePerNight;
 
     public Long getHotelId() {
@@ -52,4 +53,3 @@ public class BekbolatovZholamanCreateRoomRequest {
         this.pricePerNight = pricePerNight;
     }
 }
-

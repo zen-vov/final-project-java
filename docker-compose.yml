@@ -28,7 +28,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/booking_db
       SPRING_DATASOURCE_USERNAME: booking
       SPRING_DATASOURCE_PASSWORD: booking
-      APP_FILES_STORAGEDIR: /app/storage
+      APP_FILES_STORAGE_DIR: /app/storage
       APP_BOOTSTRAP_ADMIN_EMAIL: admin@local
       APP_BOOTSTRAP_ADMIN_PASSWORD: admin12345
     ports:
@@ -44,4 +44,3 @@ services:
 volumes:
   booking_pgdata:
   booking_storage:
-

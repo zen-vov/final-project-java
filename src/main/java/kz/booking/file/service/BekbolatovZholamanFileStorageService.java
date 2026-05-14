@@ -27,7 +27,7 @@ public class BekbolatovZholamanFileStorageService {
     private final BekbolatovZholamanFileScanService fileScanService;
 
     public BekbolatovZholamanFileStorageService(
-            @Value("${app.files.storageDir}") String storageDir,
+            @Value("${app.files.storage-dir}") String storageDir,
             BekbolatovZholamanStoredFileRepository storedFileRepository,
             BekbolatovZholamanBookingService bookingService,
             BekbolatovZholamanFileScanService fileScanService
@@ -92,4 +92,3 @@ public class BekbolatovZholamanFileStorageService {
     public record DownloadResult(Resource resource, String filename, String contentType) {
     }
 }
-

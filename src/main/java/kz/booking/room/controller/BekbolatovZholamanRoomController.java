@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ public class BekbolatovZholamanRoomController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public BekbolatovZholamanRoomResponse create(@Valid @RequestBody BekbolatovZholamanCreateRoomRequest req) {
         return BekbolatovZholamanRoomMapper.toResponse(roomService.create(req));
@@ -50,14 +52,15 @@ public class BekbolatovZholamanRoomController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public BekbolatovZholamanRoomResponse update(@PathVariable Long id, @Valid @RequestBody BekbolatovZholamanUpdateRoomRequest req) {
         return BekbolatovZholamanRoomMapper.toResponse(roomService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         roomService.delete(id);
     }
 }
-
