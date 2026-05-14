@@ -20,15 +20,18 @@ public class BekbolatovZholamanSecurityConfig {
     private final BekbolatovZholamanJwtAuthFilter jwtAuthFilter;
     private final BekbolatovZholamanUserDetailsService userDetailsService;
     private final kz.booking.common.web.BekbolatovZholamanRequestLoggingFilter requestLoggingFilter;
+    private final BekbolatovZholamanSecurityErrorHandler securityErrorHandler;
 
     public BekbolatovZholamanSecurityConfig(
             BekbolatovZholamanJwtAuthFilter jwtAuthFilter,
             BekbolatovZholamanUserDetailsService userDetailsService,
-            kz.booking.common.web.BekbolatovZholamanRequestLoggingFilter requestLoggingFilter
+            kz.booking.common.web.BekbolatovZholamanRequestLoggingFilter requestLoggingFilter,
+            BekbolatovZholamanSecurityErrorHandler securityErrorHandler
     ) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.requestLoggingFilter = requestLoggingFilter;
+        this.securityErrorHandler = securityErrorHandler;
     }
 
     @Bean
@@ -49,6 +52,10 @@ public class BekbolatovZholamanSecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(eh -> eh
+                        .authenticationEntryPoint(securityErrorHandler)
+                        .accessDeniedHandler(securityErrorHandler)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
