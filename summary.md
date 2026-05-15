@@ -1,206 +1,483 @@
-# Booking System (Final Project)
+# Booking System
 
-Тема: **Booking System** (Spring Boot + PostgreSQL + JWT).
+Проект расположен в `finalProject/booking-system`.
 
-Проект расположен в: `finalProject/booking-system`.
+Это backend на **Spring Boot 3.3.2** для системы бронирования:
+- PostgreSQL как основная БД
+- Spring Security + JWT для авторизации
+- Spring Data JPA для доступа к данным
+- Swagger/OpenAPI для документации
+- асинхронные задачи для уведомлений, сканирования файлов и генерации отчетов
 
-## 1) Архитектура (слои)
+Ниже описано, что лежит в каждой директории и за что отвечает каждый слой.
 
-Структура сделана по слоям:
+## 1) Общая архитектура
 
-- `controller` принимает HTTP запросы/Path+Query параметры, возвращает DTO
-- `service` содержит бизнес-логику, проверки, транзакции
-- `repo` (repository) слой доступа к PostgreSQL через Spring Data JPA
+Проект построен по классической слоистой схеме:
 
-Дополнительно:
+- `controller` принимает HTTP-запросы и возвращает DTO
+- `service` содержит бизнес-логику и проверки
+- `repo` отвечает за доступ к PostgreSQL через Spring Data JPA
+- `entity` описывает таблицы и связи
+- `dto` хранит модели запросов и ответов
+- `mapper` вручную преобразует Entity <-> DTO
 
-- `dto` запросы/ответы
-- `mapper` ручные маппинги Entity <-> DTO
-- `common/web` глобальная обработка ошибок и логирование
-- `security` JWT + Spring Security
+Дополнительно выделены:
 
-## 2) Сущности (6)
+- `security` - JWT, Spring Security, фильтры и конфигурация доступа
+- `common` - общие исключения, ответы об ошибках, базовая сущность, логирование
+- `notification`, `report`, `file` - отдельные прикладные подсистемы
 
-1. `BekbolatovZholamanUser` (users)
-2. `BekbolatovZholamanRole` (roles) + `BekbolatovZholamanRoleName`
-3. `BekbolatovZholamanHotel` (hotels)
-4. `BekbolatovZholamanRoom` (rooms)
-5. `BekbolatovZholamanBooking` (bookings) + `BekbolatovZholamanBookingStatus`
-6. `BekbolatovZholamanStoredFile` (stored_files)
+## 2) Корень проекта
 
-Связи:
+### `pom.xml`
 
-- User <-> Role: ManyToMany
-- Hotel -> Room: ManyToOne (Room хранит `hotel_id`)
-- Booking -> User/Room: ManyToOne
-- StoredFile -> Booking: ManyToOne
+Главный файл Maven-конфигурации.
 
-## 3) Безопасность (Spring Security + JWT)
+Содержит:
+- зависимости Spring Web, Validation, JPA, Security
+- PostgreSQL driver
+- JJWT для JWT-токенов
+- Springdoc OpenAPI
+- Actuator
+- Lombok
+- тестовые зависимости
 
-Реализовано:
+### `Dockerfile`
 
-- Регистрация `/api/auth/register`
-- Логин `/api/auth/login`
-- JWT Bearer токен в `Authorization: Bearer <token>`
-- Роли: `ROLE_USER`, `ROLE_ADMIN`
+Сборка backend-сервиса в Docker-образ.
 
-Правила доступа:
+Используется для запуска приложения в контейнере вместе с PostgreSQL через `docker-compose.yml`.
 
-- Swagger и OpenAPI: разрешены без авторизации
-- `GET /api/hotels/**` и `GET /api/rooms/**`: публичные
-- CRUD Hotels/Rooms: только `ADMIN`
-- Bookings: доступ по JWT. Обычный пользователь видит/меняет **только свои** бронирования, админ видит все.
+### `docker-compose.yml`
 
-Bootstrap admin:
+Описание инфраструктуры для локального запуска.
 
-- при старте создаются роли
-- если нет админа, создается admin по настройкам:
-  - `app.bootstrap.admin.email` (default `admin@local`)
-  - `app.bootstrap.admin.password` (default `admin12345`)
-  - `app.files.storage-dir` (можно задавать через env `APP_FILES_STORAGE_DIR`)
+Обычно поднимает:
+- PostgreSQL
+- само приложение
 
-## 4) REST эндпоинты (GET/POST/PUT/DELETE)
+### `Makefile`
 
-### Auth
+Набор коротких команд для запуска/сборки проекта.
 
-- `POST /api/auth/register` (DTO + validation)
-- `POST /api/auth/login` -> JWT
+### `README.md`
 
-### Hotels
+Краткая стартовая документация проекта.
 
-- `POST /api/hotels` (ADMIN)
-- `GET /api/hotels/{id}`
-- `GET /api/hotels?city=...&q=...&page=0&size=20&sort=name,asc`
-- `PUT /api/hotels/{id}` (ADMIN)
-- `DELETE /api/hotels/{id}` (ADMIN)
+### `summary.md`
 
-### Rooms
+Этот файл. В нём собрана архитектурная карта и назначение папок/файлов.
 
-- `POST /api/rooms` (ADMIN)
-- `GET /api/rooms/{id}`
-- `GET /api/rooms?hotelId=...&page=0&size=20&sort=pricePerNight,desc`
-- `PUT /api/rooms/{id}` (ADMIN)
-- `DELETE /api/rooms/{id}` (ADMIN)
+### `booking-system.postman_collection.json`
 
-### Bookings (пагинация + сортировка + поиск + фильтрация)
+Коллекция Postman с готовыми запросами к API.
 
-Основной эндпоинт, который закрывает требования:
+Полезна для ручной проверки эндпоинтов:
+- авторизация
+- CRUD по отелям, комнатам и бронированиям
+- загрузка файлов
+- отчеты
 
-- `GET /api/bookings`
+### `.gitignore`
 
-Query параметры:
+Список файлов и директорий, которые не должны попадать в Git:
+- build-артефакты
+- IDE-файлы
+- временные файлы
+- storage и другие локальные данные, если они не должны коммититься
 
-- `userId` (работает только для ADMIN)
-- `hotelId`, `roomId`
-- `status` (PENDING/CONFIRMED/CANCELED)
-- `from`, `to` (фильтр по датам)
-- `q` (поиск по `notes`)
-- пагинация/сортировка: `page`, `size`, `sort`
+## 3) `src/main/resources`
 
-Примеры:
+### `application.yml`
 
-- `GET /api/bookings?page=0&size=10&sort=startDate,desc`
-- `GET /api/bookings?status=CONFIRMED&from=2026-05-14&to=2026-06-01`
-- `GET /api/bookings?hotelId=1&q=late`
+Главный файл конфигурации приложения.
 
-CRUD:
+Здесь настроены:
+- порт сервера
+- подключение к PostgreSQL
+- `hibernate.ddl-auto`
+- форматирование SQL
+- параметры multipart-загрузки
+- уровень логирования
+- JWT secret и срок жизни токена
+- директория хранения файлов
+- настройки actuator
 
-- `POST /api/bookings` (создание брони текущим пользователем)
-- `GET /api/bookings/{id}` (владелец или ADMIN)
-- `PUT /api/bookings/{id}` (user может CANCEL, admin может CONFIRM)
-- `DELETE /api/bookings/{id}` (ADMIN)
+Это центральное место, где меняются параметры окружения без правки кода.
 
-Бизнес-валидация:
+## 4) `src/main/java/kz/booking`
 
-- `startDate/endDate` обязательны
-- `endDate >= startDate`
-- `startDate` не в прошлом
-- проверка пересечения бронирований в одной комнате (`existsOverlapping(...)`)
+Это основной код приложения.  
+Здесь лежит entry point и все доменные пакеты.
 
-### Files (upload/download)
+### `BekbolatovZholamanBookingSystemApplication.java`
 
-- `POST /api/bookings/{bookingId}/files` (multipart `file`) (владелец брони или ADMIN)
-- `GET /api/bookings/{bookingId}/files` (список метаданных)
-- `GET /api/files/{fileId}/download` (download)
+Точка входа Spring Boot-приложения.
 
-Файлы хранятся на диске в директории `app.files.storage-dir` (по умолчанию `./storage`).
+Именно этот класс запускает контекст приложения.
 
-### Async reports (ADMIN)
+## 5) Пакет `auth`
 
-- `GET /api/admin/reports/bookings?from=2026-05-14&to=2026-06-01` -> вернет `reportKey` (генерация CSV асинхронно)
-- `GET /api/admin/reports/bookings/download?reportKey=...` -> скачать CSV
+Отвечает за вход и регистрацию.
 
-## 5) Async процессы (2-3)
+### `auth/controller`
 
-1. `BekbolatovZholamanNotificationService`:
-   - отправка "email" после создания брони
-   - отправка "email" после подтверждения брони
-2. `BekbolatovZholamanFileScanService`:
-   - асинхронный "scan" загруженного файла
-3. `BekbolatovZholamanBookingReportService`:
-   - асинхронная генерация CSV отчета
+- `BekbolatovZholamanAuthController.java` - HTTP-эндпоинты регистрации и логина
 
-Технически: `@EnableAsync` + `@Async` + `CompletableFuture`.
+### `auth/service`
 
-## 6) Валидация + обработка ошибок
+- `BekbolatovZholamanAuthService.java` - бизнес-логика регистрации, аутентификации и выдачи JWT
 
-- DTO валидация через `jakarta.validation` (`@Valid`, `@NotBlank`, `@Email`, и т.д.)
-- `BekbolatovZholamanGlobalExceptionHandler` возвращает `BekbolatovZholamanApiError`
+### `auth/dto`
 
-## 7) Swagger UI
+- `BekbolatovZholamanAuthRequest.java` - запрос на логин
+- `BekbolatovZholamanRegisterRequest.java` - запрос на регистрацию
+- `BekbolatovZholamanAuthResponse.java` - ответ с токеном и данными пользователя
 
-Swagger UI:
+## 6) Пакет `booking`
 
-- `GET /swagger-ui/index.html`
+Главный домен проекта - бронирования.
 
-OpenAPI JSON:
+### `booking/controller`
 
-- `GET /v3/api-docs`
+- `BekbolatovZholamanBookingController.java` - HTTP API для создания, просмотра, обновления и удаления бронирований
 
-## 8) Логирование
+### `booking/service`
 
-- `BekbolatovZholamanRequestLoggingFilter` логирует `method/path/status/user/tookMs`
-- `BekbolatovZholamanGlobalExceptionHandler` логирует неожиданные ошибки
+- `BekbolatovZholamanBookingService.java` - бизнес-правила бронирования:
+  - проверка дат
+  - контроль пересечений
+  - права доступа владельца и администратора
+  - смена статуса
 
-## 9) Запуск
+### `booking/repo`
 
-### Вариант A: Docker Compose (рекомендуется)
+- `BekbolatovZholamanBookingRepository.java` - доступ к таблице бронирований и поисковые запросы
 
-Из папки `finalProject/booking-system`:
+### `booking/entity`
 
-```bash
-docker compose up --build
+- `BekbolatovZholamanBooking.java` - сущность бронирования
+- `BekbolatovZholamanBookingStatus.java` - статусы брони
+
+### `booking/dto`
+
+- `BekbolatovZholamanCreateBookingRequest.java` - создание брони
+- `BekbolatovZholamanUpdateBookingRequest.java` - обновление брони
+- `BekbolatovZholamanBookingResponse.java` - ответ API по бронированию
+
+### `booking/mapper`
+
+- `BekbolatovZholamanBookingMapper.java` - преобразование Booking Entity в DTO и обратно
+
+## 7) Пакет `hotel`
+
+Сущность отеля и CRUD для него.
+
+### `hotel/controller`
+
+- `BekbolatovZholamanHotelController.java` - эндпоинты отелей
+
+### `hotel/service`
+
+- `BekbolatovZholamanHotelService.java` - бизнес-логика отелей
+
+### `hotel/repo`
+
+- `BekbolatovZholamanHotelRepository.java` - работа с БД по отелям
+
+### `hotel/entity`
+
+- `BekbolatovZholamanHotel.java` - таблица отелей
+
+### `hotel/dto`
+
+- `BekbolatovZholamanCreateHotelRequest.java` - создание отеля
+- `BekbolatovZholamanUpdateHotelRequest.java` - обновление отеля
+- `BekbolatovZholamanHotelResponse.java` - ответ API по отелю
+
+### `hotel/mapper`
+
+- `BekbolatovZholamanHotelMapper.java` - маппинг между entity и DTO
+
+## 8) Пакет `room`
+
+Комнаты принадлежат отелям и используются при бронировании.
+
+### `room/controller`
+
+- `BekbolatovZholamanRoomController.java` - HTTP API по комнатам
+
+### `room/service`
+
+- `BekbolatovZholamanRoomService.java` - логика по комнатам
+
+### `room/repo`
+
+- `BekbolatovZholamanRoomRepository.java` - запросы к таблице комнат
+
+### `room/entity`
+
+- `BekbolatovZholamanRoom.java` - сущность комнаты
+
+### `room/dto`
+
+- `BekbolatovZholamanCreateRoomRequest.java` - создание комнаты
+- `BekbolatovZholamanUpdateRoomRequest.java` - обновление комнаты
+- `BekbolatovZholamanRoomResponse.java` - ответ API по комнате
+
+### `room/mapper`
+
+- `BekbolatovZholamanRoomMapper.java` - преобразование Room Entity в DTO
+
+## 9) Пакет `user`
+
+Пользователи, роли и первичная инициализация данных.
+
+### `user/controller`
+
+- `BekbolatovZholamanUserController.java` - API для работы с пользователями
+
+### `user/service`
+
+- `BekbolatovZholamanUserService.java` - логика пользователя, ролей и операций вокруг аккаунтов
+
+### `user/repo`
+
+- `BekbolatovZholamanUserRepository.java` - запросы к таблице пользователей
+- `BekbolatovZholamanRoleRepository.java` - запросы к таблице ролей
+
+### `user/entity`
+
+- `BekbolatovZholamanUser.java` - пользователь системы
+- `BekbolatovZholamanRole.java` - роль
+- `BekbolatovZholamanRoleName.java` - enum названий ролей
+
+### `user/dto`
+
+- `BekbolatovZholamanUserResponse.java` - ответ API по пользователю
+
+### `user/mapper`
+
+- `BekbolatovZholamanUserMapper.java` - маппинг User Entity в DTO
+
+### `user/init`
+
+- `BekbolatovZholamanDataInitializer.java` - стартовая инициализация данных
+
+Обычно здесь создаются:
+- базовые роли
+- начальный admin-пользователь, если его нет
+
+## 10) Пакет `security`
+
+Все, что связано с безопасностью и JWT.
+
+### `security/BekbolatovZholamanSecurityConfig.java`
+
+Главная конфигурация Spring Security:
+- правила доступа
+- публичные и защищенные URL
+- подключение JWT-фильтра
+- настройки authentication/authorization
+
+### `security/BekbolatovZholamanJwtService.java`
+
+Создание и проверка JWT.
+
+### `security/BekbolatovZholamanJwtAuthFilter.java`
+
+Фильтр, который извлекает JWT из `Authorization: Bearer ...` и поднимает пользователя в SecurityContext.
+
+### `security/BekbolatovZholamanUserDetailsService.java`
+
+Загрузка пользователя из БД для Spring Security.
+
+### `security/BekbolatovZholamanSecurityErrorHandler.java`
+
+Обработка ошибок аутентификации и авторизации.
+
+## 11) Пакет `common`
+
+Общие классы, которые используются в нескольких модулях.
+
+### `common/entity`
+
+- `BekbolatovZholamanBaseEntity.java` - базовая сущность с общими полями, например идентификатором и аудиторскими данными
+
+### `common/exception`
+
+- `BekbolatovZholamanNotFoundException.java` - сущность не найдена
+- `BekbolatovZholamanForbiddenException.java` - доступ запрещен
+- `BekbolatovZholamanBadRequestException.java` - неверный запрос или нарушение бизнес-правил
+
+### `common/api`
+
+- `BekbolatovZholamanApiError.java` - унифицированный ответ об ошибке
+- `BekbolatovZholamanFieldViolation.java` - ошибка по конкретному полю
+
+### `common/web`
+
+- `BekbolatovZholamanGlobalExceptionHandler.java` - глобальный `@ControllerAdvice`
+- `BekbolatovZholamanRequestLoggingFilter.java` - логирование входящих HTTP-запросов
+
+### `common/security`
+
+- `BekbolatovZholamanSecurityUtils.java` - вспомогательные методы для работы с текущим пользователем, ролями и security context
+
+## 12) Пакет `file`
+
+Работа с файлами, привязанными к бронированиям.
+
+### `file/controller`
+
+- `BekbolatovZholamanFileController.java` - API для загрузки и скачивания файлов
+
+### `file/service`
+
+- `BekbolatovZholamanFileStorageService.java` - сохранение и выдача файлов с диска
+- `BekbolatovZholamanFileScanService.java` - асинхронная проверка/сканирование загруженного файла
+
+### `file/repo`
+
+- `BekbolatovZholamanStoredFileRepository.java` - доступ к метаданным файлов в БД
+
+### `file/entity`
+
+- `BekbolatovZholamanStoredFile.java` - запись о загруженном файле
+
+### `file/dto`
+
+- `BekbolatovZholamanStoredFileResponse.java` - ответ API по файлу
+
+### `file/mapper`
+
+- `BekbolatovZholamanStoredFileMapper.java` - преобразование entity в DTO
+
+## 13) Пакет `notification`
+
+- `BekbolatovZholamanNotificationService.java`
+
+Асинхронный сервис уведомлений.
+
+Используется для действий вроде:
+- уведомление после создания брони
+- уведомление после подтверждения брони
+
+В текущем проекте это отдельный сервис, чтобы не смешивать бизнес-логику бронирования с отправкой уведомлений.
+
+## 14) Пакет `report`
+
+### `BekbolatovZholamanBookingReportService.java`
+
+Асинхронная генерация отчетов по бронированиям.
+
+### `BekbolatovZholamanReportController.java`
+
+HTTP API для запуска генерации и скачивания отчета.
+
+Этот модуль отделен от основного CRUD, потому что отчет - это не базовая операция над сущностью, а отдельный сценарий обработки данных.
+
+## 15) Пакет `config`
+
+- `BekbolatovZholamanOpenApiConfig.java`
+
+Конфигурация Swagger/OpenAPI.
+
+Здесь обычно настраиваются:
+- описание API
+- заголовки безопасности
+- группировка эндпоинтов
+- схема документации
+
+## 16) Что лежит по папкам с технической точки зрения
+
+Если смотреть не на домены, а на роль директорий, картина такая:
+
+- `controller` - вход в приложение по HTTP
+- `service` - правила и сценарии
+- `repo` - SQL/ORM слой
+- `entity` - таблицы и связи
+- `dto` - контракт API
+- `mapper` - преобразование данных
+- `security` - authn/authz
+- `common` - переиспользуемые компоненты
+
+Это помогает быстро понять, куда добавлять новый код:
+- новый endpoint -> `controller`
+- новая бизнес-логика -> `service`
+- новая таблица/связь -> `entity`
+- новый запрос к БД -> `repo`
+- новый формат ответа -> `dto`
+- новая конвертация -> `mapper`
+
+## 17) Важные бизнес-сценарии
+
+### Авторизация
+
+Пользователь регистрируется или входит через `/api/auth/*`, получает JWT и дальше работает с защищенными эндпоинтами через `Authorization: Bearer <token>`.
+
+### Отели и комнаты
+
+Администратор управляет справочниками отелей и комнат. Обычные пользователи в основном читают данные и используют их при бронировании.
+
+### Бронирования
+
+Это центральная сущность системы.
+
+Здесь проверяются:
+- даты
+- пересечения
+- права владельца
+- статус брони
+
+### Файлы
+
+Файлы сохраняются на диск, а в БД хранится метаинформация.
+
+### Отчеты
+
+Отчеты генерируются асинхронно, чтобы не блокировать основной HTTP-запрос.
+
+## 18) Текущее состояние тестов
+
+В репозитории на момент анализа нет файлов в `src/test`.
+
+Это значит, что проект опирается в основном на ручную проверку через:
+- Postman collection
+- Swagger UI
+- запуск через Docker Compose или локально
+
+## 19) Краткая схема по пакетам
+
+```text
+src/main/java/kz/booking
+├── auth           login/register/JWT response
+├── booking        bookings, status, validation, filters
+├── common         base entity, errors, logging, shared utils
+├── config         OpenAPI configuration
+├── file           upload/download/stored file metadata
+├── hotel          hotels CRUD
+├── notification   async notifications
+├── report         async CSV reports
+├── room           rooms CRUD
+├── security       JWT + Spring Security
+└── user           users, roles, bootstrap data
 ```
 
-Сервисы:
+## 20) Коротко
 
-- `postgres` (PostgreSQL 16) на `localhost:5432`
-- `api` на `http://localhost:8080`
+Если смотреть совсем просто:
 
-Healthcheck:
+- `controller` - принимает запрос
+- `service` - решает, что с ним делать
+- `repo` - ходит в БД
+- `entity` - хранит структуру данных
+- `dto` - показывает данные наружу
+- `mapper` - переводит одно в другое
+- `security` - защищает API
+- `common` - общие кирпичи проекта
 
-- `http://localhost:8080/actuator/health`
-
-Swagger:
-
-- `http://localhost:8080/swagger-ui/index.html`
-
-### Вариант B: Локально (без Docker)
-
-1. Поднять PostgreSQL и создать БД/юзера:
-   - db: `booking_db`
-   - user: `booking`
-   - password: `booking`
-2. Запуск:
-
-```bash
-mvn -Dmaven.repo.local=/private/tmp/m2 spring-boot:run
-```
-
-## 10) Полезные заметки
-
-- По умолчанию админ создается автоматически:
-  - email: `admin@local`
-  - password: `admin12345`
-- Для запросов с protected эндпоинтами используйте заголовок:
-  - `Authorization: Bearer <token>`
+Если нужно, следующим сообщением могу сделать ещё более практичную версию:
+- либо `дерево проекта с пояснениями по каждому файлу`
+- либо `короткую карту зависимостей между пакетами и классами`

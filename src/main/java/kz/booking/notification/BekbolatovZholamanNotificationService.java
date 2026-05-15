@@ -13,7 +13,6 @@ public class BekbolatovZholamanNotificationService {
 
     @Async
     public CompletableFuture<Void> sendBookingCreatedEmail(String toEmail, Long bookingId) {
-        // Simulate external I/O (email provider)
         log.info("Async: sending booking created email to={} bookingId={}", toEmail, bookingId);
         return CompletableFuture.completedFuture(null);
     }
@@ -24,4 +23,3 @@ public class BekbolatovZholamanNotificationService {
         return CompletableFuture.completedFuture(null);
     }
 }
-
